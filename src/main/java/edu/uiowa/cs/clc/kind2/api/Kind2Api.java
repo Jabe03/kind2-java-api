@@ -264,7 +264,7 @@ public class Kind2Api {
     return result;
   }
 
-  public String interpret(URI uri, String main, String json) {
+  public String interpret(URI uri, String main, String json, int steps) {
     List<String> options = new ArrayList<>();
     options.add(KIND2);
     options.addAll(getOptions());
@@ -274,6 +274,9 @@ public class Kind2Api {
     options.add("interpreter");
     options.add("--interpreter_input_file");
     options.add(ApiUtil.writeInterpreterFile(json).toURI().getPath());
+    options.add("--interpreter_steps");
+    options.add(String.valueOf(steps));
+
     options.add(uri.getPath());
     ProcessBuilder builder = new ProcessBuilder(options);
     try {
