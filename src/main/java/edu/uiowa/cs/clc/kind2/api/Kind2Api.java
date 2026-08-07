@@ -285,7 +285,7 @@ public class Kind2Api {
    * @return the interpreter output
    * @throws Kind2Exception if Kind 2 fails to run
    */
-  public String interpret(URI uri, String main, String json) {
+  public String interpret(URI uri, String main, String json, String steps) {
     List<String> options = new ArrayList<>();
     options.add(KIND2);
     options.addAll(getOptions());
@@ -312,16 +312,6 @@ public class Kind2Api {
           }
       }
       return trace;
-      final InputStreamReader reader = new InputStreamReader(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8);
-      JsonStreamParser jsp = new JsonStreamParser(reader);
-      String trace = "";
-      while (jsp.hasNext()) {
-          JsonElement jele = jsp.next();
-          if (jele.isJsonObject() && jele.getAsJsonObject().has("trace")) {
-              trace = jele.getAsJsonObject().get("trace").toString();
-          }
-      }
-      return trace;
     } catch (IOException e) {
       throw new Kind2Exception(e.getMessage());
     }
@@ -336,7 +326,7 @@ public class Kind2Api {
    * @return the interpreter output
    * @throws Kind2Exception if Kind 2 fails to run
    */
-  public String interpret(String program, String main, String json) {
+  public String interpret(String program, String main, String json, String steps) {
     List<String> options = new ArrayList<>();
     options.add(KIND2);
     options.addAll(getOptions());
@@ -354,16 +344,6 @@ public class Kind2Api {
       process.getOutputStream().write(program.getBytes());
       process.getOutputStream().flush();
       process.getOutputStream().close();
-      final InputStreamReader reader = new InputStreamReader(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8);
-      JsonStreamParser jsp = new JsonStreamParser(reader);
-      String trace = "";
-      while (jsp.hasNext()) {
-          JsonElement jele = jsp.next();
-          if (jele.isJsonObject() && jele.getAsJsonObject().has("trace")) {
-              trace = jele.getAsJsonObject().get("trace").toString();
-          }
-      }
-      return trace;
       final InputStreamReader reader = new InputStreamReader(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8);
       JsonStreamParser jsp = new JsonStreamParser(reader);
       String trace = "";
@@ -409,13 +389,11 @@ public class Kind2Api {
   }
 
   private void callKind2(String program, Result result, IProgressMonitor monitor, ResultListener listener)
-  private void callKind2(String program, Result result, IProgressMonitor monitor, ResultListener listener)
       throws IOException, InterruptedException {
     ProcessBuilder builder = getKind2ProcessBuilder();
     debug.println("Kind 2 command: " + ApiUtil.getQuotedCommand(builder.command()));
     Process process = null;
     boolean exceptionThrown = false;
-    JsonStreamParser jsp;
     JsonStreamParser jsp;
     try {
       process = builder.start();
