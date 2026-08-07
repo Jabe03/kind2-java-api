@@ -9,7 +9,6 @@ package edu.uiowa.cs.clc.kind2.results;
 
 import java.io.IOException;
 import java.math.RoundingMode;
-import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
@@ -18,6 +17,14 @@ import java.nio.file.Paths;
  */
 public class Main
 {
+  private Main() {
+  }
+
+  /**
+   * Reads a Kind 2 json file and prints the analysed result.
+   *
+   * @param args the path to the json file to read
+   */
   public static void main(String args[])
   {
     Result.setPrintingCounterExamplesEnabled(true);

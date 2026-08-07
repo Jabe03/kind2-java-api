@@ -11,9 +11,7 @@ import com.google.gson.GsonBuilder;
 import com.google.gson.JsonElement;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 
 /**
  * PostAnalysis in Kind 2
@@ -41,6 +39,12 @@ public class PostAnalysis
    */
   private final Analysis analysis;
 
+  /**
+   * Constructs a post-analysis from one Kind 2 postAnalysisStart object.
+   *
+   * @param analysis the analysis this post-analysis follows
+   * @param jsonElement the Kind 2 json object describing the post-analysis
+   */
   public PostAnalysis(Analysis analysis, JsonElement jsonElement)
   {
     this.analysis = analysis;
@@ -50,12 +54,19 @@ public class PostAnalysis
     modelElements = new ArrayList<>();
   }
 
+  /**
+   * Adds a model element set computed by this post-analysis.
+   *
+   * @param modelElementSet the model element set to add
+   */
   public void addModelElementSet(ModelElementSet modelElementSet)
   {
     modelElements.add(modelElementSet);
   }
 
   /**
+   * Returns the Kind2 json output for this object.
+   *
    * @return Kind2 json output for this object.
    */
   public String getJson()
@@ -64,6 +75,8 @@ public class PostAnalysis
   }
 
   /**
+   * Returns the name of the Kind 2 post-analysis.
+   *
    * @return the name of the Kind 2 post-analysis
    */
   public String getName()
@@ -72,6 +85,8 @@ public class PostAnalysis
   }
 
   /**
+   * Returns the associated kind2 analysis.
+   *
    * @return the associated kind2 analysis.
    */
   public Analysis getAnalysis()
@@ -80,6 +95,8 @@ public class PostAnalysis
   }
 
   /**
+   * Returns the model elements computed in the post-analysis.
+   *
    * @return the model elements computed in the post-analysis
    */
   public List<ModelElementSet> getModelElements()

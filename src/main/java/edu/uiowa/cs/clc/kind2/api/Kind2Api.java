@@ -10,6 +10,7 @@ package edu.uiowa.cs.clc.kind2.api;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStreamReader;
+import java.io.InputStreamReader;
 import java.net.URI;
 import java.util.ArrayList;
 import java.util.HashSet;
@@ -20,14 +21,22 @@ import com.google.gson.JsonElement;
 import com.google.gson.JsonIOException;
 import com.google.gson.JsonStreamParser;
 
+import com.google.gson.JsonElement;
+import com.google.gson.JsonIOException;
+import com.google.gson.JsonStreamParser;
+
 import edu.uiowa.cs.clc.kind2.Kind2Exception;
 import edu.uiowa.cs.clc.kind2.lustre.Program;
+import edu.uiowa.cs.clc.kind2.results.Result;
 import edu.uiowa.cs.clc.kind2.results.Result;
 
 /**
  * The primary interface to Kind2.
  */
 public class Kind2Api {
+  /**
+   * The name of, or path to, the Kind 2 executable.
+   */
   public static String KIND2 = "kind2";
   private static final long POLL_INTERVAL = 100;
 
@@ -118,6 +127,9 @@ public class Kind2Api {
   private String lusMainConst;
   private String fakeFilepath;
 
+  /**
+   * Constructs an API instance with Kind 2's default options.
+   */
   public Kind2Api() {
     otherOptions = new ArrayList<>();
     smtSolver = null;
@@ -214,7 +226,7 @@ public class Kind2Api {
    * @param result Place to store results as they come in
    * @param monitor Used to check for cancellation
    * @param modules A list of modules to enable
-   * @throws Kind2Exception
+   * @throws Kind2Exception if Kind 2 fails to run or its output cannot be parsed
    */
   public void execute(String program, Result result, IProgressMonitor monitor, List<Module> modules) {
     for (Module module: modules) {
@@ -264,7 +276,16 @@ public class Kind2Api {
     return result;
   }
 
-  public String interpret(URI uri, String main, String json, int steps) {
+  /**
+   * Runs the Kind 2 interpreter on a Lustre file.
+   *
+   * @param uri the Lustre file to interpret
+   * @param main the main node to interpret
+   * @param json the input values, as a json string
+   * @return the interpreter output
+   * @throws Kind2Exception if Kind 2 fails to run
+   */
+  public String interpret(URI uri, String main, String json) {
     List<String> options = new ArrayList<>();
     options.add(KIND2);
     options.addAll(getOptions());
@@ -291,12 +312,31 @@ public class Kind2Api {
           }
       }
       return trace;
+      final InputStreamReader reader = new InputStreamReader(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8);
+      JsonStreamParser jsp = new JsonStreamParser(reader);
+      String trace = "";
+      while (jsp.hasNext()) {
+          JsonElement jele = jsp.next();
+          if (jele.isJsonObject() && jele.getAsJsonObject().has("trace")) {
+              trace = jele.getAsJsonObject().get("trace").toString();
+          }
+      }
+      return trace;
     } catch (IOException e) {
       throw new Kind2Exception(e.getMessage());
     }
   }
 
-  public String interpret(String program, String main, String json, int steps) {
+  /**
+   * Runs the Kind 2 interpreter on a Lustre program.
+   *
+   * @param program the Lustre program as text
+   * @param main the main node to interpret
+   * @param json the input values, as a json string
+   * @return the interpreter output
+   * @throws Kind2Exception if Kind 2 fails to run
+   */
+  public String interpret(String program, String main, String json) {
     List<String> options = new ArrayList<>();
     options.add(KIND2);
     options.addAll(getOptions());
@@ -324,6 +364,16 @@ public class Kind2Api {
           }
       }
       return trace;
+      final InputStreamReader reader = new InputStreamReader(process.getInputStream(), java.nio.charset.StandardCharsets.UTF_8);
+      JsonStreamParser jsp = new JsonStreamParser(reader);
+      String trace = "";
+      while (jsp.hasNext()) {
+          JsonElement jele = jsp.next();
+          if (jele.isJsonObject() && jele.getAsJsonObject().has("trace")) {
+              trace = jele.getAsJsonObject().get("trace").toString();
+          }
+      }
+      return trace;
     } catch (IOException e) {
       throw new Kind2Exception(e.getMessage());
     }
@@ -335,7 +385,7 @@ public class Kind2Api {
    * @param program Lustre program as text
    * @param result Place to store results as they come in
    * @param monitor Used to check for cancellation
-   * @throws Kind2Exception
+   * @throws Kind2Exception if Kind 2 fails to run or its output cannot be parsed
    */
   public void execute(String program, Result result, IProgressMonitor monitor) {
     this.execute(program, result, monitor, (ResultListener)null);
@@ -347,7 +397,8 @@ public class Kind2Api {
    * @param program Lustre program as text
    * @param result Place to store results as they come in
    * @param monitor Used to check for cancellation
-   * @throws Kind2Exception
+   * @param listener Notified of results as they come in, may be null
+   * @throws Kind2Exception if Kind 2 fails to run or its output cannot be parsed
    */
   public void execute(String program, Result result, IProgressMonitor monitor, ResultListener listener) {
     try {
@@ -358,11 +409,13 @@ public class Kind2Api {
   }
 
   private void callKind2(String program, Result result, IProgressMonitor monitor, ResultListener listener)
+  private void callKind2(String program, Result result, IProgressMonitor monitor, ResultListener listener)
       throws IOException, InterruptedException {
     ProcessBuilder builder = getKind2ProcessBuilder();
     debug.println("Kind 2 command: " + ApiUtil.getQuotedCommand(builder.command()));
     Process process = null;
     boolean exceptionThrown = false;
+    JsonStreamParser jsp;
     JsonStreamParser jsp;
     try {
       process = builder.start();
@@ -387,7 +440,7 @@ public class Kind2Api {
       while (jsp.hasNext()) {
           JsonElement jele = jsp.next();
           debug.println("Parsing JSON element: " + jele.toString());
-          result.initializeInc(jele);
+          result.addJsonElement(jele);
           if(listener != null){
             listener.onUpdate(result);
           }
@@ -402,7 +455,7 @@ public class Kind2Api {
       try {
         if (!monitor.isCanceled()) {
           try {
-            result.closeInitialization();
+            result.finish();
           } catch (Throwable t) {
             if (!exceptionThrown) {
               throw t;
@@ -436,6 +489,11 @@ public class Kind2Api {
     this.otherOptions = options;
   }
 
+  /**
+   * Returns the command line options this API will pass to Kind 2.
+   *
+   * @return the command line options this API will pass to Kind 2
+   */
   public List<String> getOptions() {
     List<String> options = new ArrayList<>();
     options.add("-ijson");
@@ -1455,9 +1513,8 @@ public class Kind2Api {
   }
 
   /**
-   * Designate a type declaration in the Lustre input file as the main 
+   * Designate a type declaration in the Lustre input file as the main
    * model element for the analysis
-   * <p>
    *
    * @param lusMainType the main type
    */
@@ -1466,9 +1523,8 @@ public class Kind2Api {
   }
 
   /**
-   * Designate a constant declaration in the Lustre input file as the main 
-   * model element for the analysis   
-   * <p>
+   * Designate a constant declaration in the Lustre input file as the main
+   * model element for the analysis
    *
    * @param lusMainConst the main constant
    */

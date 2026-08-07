@@ -24,7 +24,6 @@ public class Node
    */
   private final String json;
 
-  private final JsonElement jsonElement;
   /**
    * Name of the node
    */
@@ -38,10 +37,15 @@ public class Node
    */
   private final List<Element> elements;
 
+  /**
+   * Constructs a node grouping from one Kind 2 node object.
+   *
+   * @param modelElementSet the model element set this node belongs to
+   * @param jsonElement the Kind 2 json object describing the node
+   */
   public Node(ModelElementSet modelElementSet, JsonElement jsonElement)
   {
     this.modelElementSet = modelElementSet;
-    this.jsonElement = jsonElement;
     json = new GsonBuilder().setPrettyPrinting().create().toJson(jsonElement);
     JsonObject jsonObject = jsonElement.getAsJsonObject();
     name = jsonObject.get(Labels.name).getAsString();
@@ -56,6 +60,8 @@ public class Node
 
   /**
    * Kind2 json output for this object.
+   *
+   * @return the Kind2 json output for this object.
    */
   public String getJson()
   {
@@ -63,7 +69,9 @@ public class Node
   }
 
   /**
-   * @return the name of the name
+   * Returns the name of the node.
+   *
+   * @return the name of the node
    */
   public String getName()
   {
@@ -71,6 +79,8 @@ public class Node
   }
 
   /**
+   * Returns the model element set to which this class belongs to.
+   *
    * @return the model element set to which this class belongs to
    */
   public ModelElementSet getModelElementSet()
@@ -79,6 +89,8 @@ public class Node
   }
 
   /**
+   * Returns the list of model elements belonging to this node.
+   *
    * @return list of model elements which belongs to this node
    */
   public List<Element> getElements()
